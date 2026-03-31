@@ -1,101 +1,171 @@
-import Image from "next/image";
+'use client'
+
+import { useState, useCallback, useRef } from 'react'
+import TopBar from '@/components/TopBar'
+import Hero from '@/components/Hero'
+import SearchBox from '@/components/SearchBox'
+import StreetViewCard from '@/components/StreetViewCard'
+import ProgressBar from '@/components/ProgressBar'
+import StoryCard from '@/components/StoryCard'
+import ComparisonCard from '@/components/ComparisonCard'
+import ScoreCard from '@/components/ScoreCard'
+import { StoryData, ComparisonData, ScoreData } from '@/types'
+
+const sampleAddresses = [
+  '120 Adelaide St W, Toronto',
+  '55 Bloor St W, Toronto',
+  '300 Front St W, Toronto',
+  '19 Duncan St, Toronto',
+  '1 Yonge St, Toronto',
+]
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [address, setAddress] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [showResults, setShowResults] = useState(false)
+  const [submittedAddress, setSubmittedAddress] = useState('')
+  const [storyData, setStoryData] = useState<StoryData | null>(null)
+  const [storyDone, setStoryDone] = useState(false)
+  const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null)
+  const [comparisonDone, setComparisonDone] = useState(false)
+  const [scoreData, setScoreData] = useState<ScoreData | null>(null)
+  const [scoreDone, setScoreDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [card1Visible, setCard1Visible] = useState(false)
+  const [card2Visible, setCard2Visible] = useState(false)
+  const [card3Visible, setCard3Visible] = useState(false)
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const addressRef = useRef(address)
+  addressRef.current = address
+
+  const handleAnalyse = useCallback(() => {
+    const currentAddress = addressRef.current
+    if (!currentAddress.trim()) return
+
+    // Reset state
+    setIsLoading(true)
+    setShowResults(true)
+    setSubmittedAddress(currentAddress)
+    setStoryData(null)
+    setStoryDone(false)
+    setComparisonData(null)
+    setComparisonDone(false)
+    setScoreData(null)
+    setScoreDone(false)
+    setError(null)
+    setCard1Visible(false)
+    setCard2Visible(false)
+    setCard3Visible(false)
+
+    // Stagger card appearance
+    setTimeout(() => setCard1Visible(true), 60)
+    setTimeout(() => setCard2Visible(true), 160)
+    setTimeout(() => setCard3Visible(true), 260)
+
+    // Auto-scroll to results
+    setTimeout(() => {
+      document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' })
+    }, 350)
+
+    // Parallel API calls
+    const fetchStory = async () => {
+      try {
+        const res = await fetch('/api/story', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: currentAddress }),
+        })
+        if (!res.ok) throw new Error('Failed')
+        const data = await res.json()
+        setStoryData(data)
+      } catch {
+        setStoryData(null)
+      } finally {
+        setStoryDone(true)
+      }
+    }
+
+    const fetchComparison = async () => {
+      try {
+        const res = await fetch('/api/comparison', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: currentAddress }),
+        })
+        if (!res.ok) throw new Error('Failed')
+        const data = await res.json()
+        setComparisonData(data)
+      } catch {
+        setComparisonData(null)
+      } finally {
+        setComparisonDone(true)
+      }
+    }
+
+    const fetchScore = async () => {
+      try {
+        const res = await fetch('/api/score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: currentAddress }),
+        })
+        if (!res.ok) throw new Error('Failed')
+        const data = await res.json()
+        setScoreData(data)
+      } catch {
+        setScoreData(null)
+      } finally {
+        setScoreDone(true)
+      }
+    }
+
+    Promise.all([fetchStory(), fetchComparison(), fetchScore()])
+      .catch(() => setError('All analyses failed. Please try again.'))
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  return (
+    <div className="mx-auto" style={{ maxWidth: 430 }}>
+      <TopBar />
+      <Hero />
+      <SearchBox
+        value={address}
+        onChange={setAddress}
+        onSubmit={handleAnalyse}
+        isLoading={isLoading}
+        sampleAddresses={sampleAddresses}
+      />
+
+      {showResults && (
+        <div id="results">
+          <StreetViewCard address={submittedAddress} submittedAddress={submittedAddress} />
+          <ProgressBar step1Done={storyDone} step2Done={comparisonDone} step3Done={scoreDone} />
+          <StoryCard data={storyData} isDone={storyDone} isVisible={card1Visible} />
+          <ComparisonCard data={comparisonData} isDone={comparisonDone} isVisible={card2Visible} />
+          <ScoreCard data={scoreData} isDone={scoreDone} isVisible={card3Visible} />
+
+          {error && storyDone && comparisonDone && scoreDone && !storyData && !comparisonData && !scoreData && (
+            <div
+              className="font-sans text-center"
+              style={{
+                color: 'var(--red)',
+                fontSize: 13,
+                padding: '12px 20px',
+              }}
+            >
+              {error}
+            </div>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
+
+      {/* Footer */}
+      <div
+        className="font-sans text-center text-ink-4"
+        style={{ fontSize: 11, padding: '24px 20px 40px' }}
+      >
+        Built by <span className="text-green">Shakeb</span> · Opendoor Toronto Demo
+      </div>
     </div>
-  );
+  )
 }
