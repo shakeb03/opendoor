@@ -205,18 +205,6 @@ export default function ScoreCard({ data, isDone, isVisible }: ScoreCardProps) {
                 {data.offerRange}
               </div>
             </div>
-            <button
-              className="font-sans font-semibold text-white bg-green"
-              style={{
-                fontSize: 13,
-                padding: '10px 18px',
-                borderRadius: 10,
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              Get Offer →
-            </button>
           </div>
         </>
       )}
