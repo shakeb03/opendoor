@@ -63,9 +63,13 @@ export default function SearchBox({ value, onChange, onSubmit, isLoading, sample
 
         {/* Submit button */}
         <button
-          onClick={onSubmit}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault()
+            if (!isLoading) onSubmit()
+          }}
           disabled={isLoading}
-          className="flex items-center justify-center bg-green text-white flex-shrink-0"
+          className="flex items-center justify-center bg-green text-white flex-shrink-0 submit-arrow"
           style={{
             width: 44,
             height: 44,
@@ -73,16 +77,6 @@ export default function SearchBox({ value, onChange, onSubmit, isLoading, sample
             border: 'none',
             margin: 5,
             cursor: isLoading ? 'default' : 'pointer',
-            transition: 'transform 0.1s',
-          }}
-          onMouseDown={(e) => {
-            if (!isLoading) (e.currentTarget.style.transform = 'scale(0.93)')
-          }}
-          onMouseUp={(e) => {
-            e.currentTarget.style.transform = 'scale(1)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)'
           }}
         >
           {isLoading ? (
@@ -147,6 +141,12 @@ export default function SearchBox({ value, onChange, onSubmit, isLoading, sample
         .search-field:focus-within {
           border-color: var(--green);
           box-shadow: var(--card-shadow), 0 0 0 3px var(--green-pale);
+        }
+        .submit-arrow {
+          transition: transform 0.1s;
+        }
+        .submit-arrow:active {
+          transform: scale(0.93);
         }
         div::-webkit-scrollbar {
           display: none;
